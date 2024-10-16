@@ -1,8 +1,8 @@
 # 《德克萨斯送快递》游戏设计文档
 
-作者：马永哲（21200623）、王曦（21201104）
+作者：atoposyz, [Christine-wxx](https://github.com/Christine-wxx)
 
-鸣谢：郭冠男（提供了人物形象素材）
+鸣谢：[GGM_2015](https://github.com/GGN-2015)（提供了人物形象素材）
 
 ## 1. 游戏介绍
 
