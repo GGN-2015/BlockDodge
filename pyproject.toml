@@ -12,6 +12,11 @@ dependencies = [
     "pygame==2.6.1",
 ]
 
+[project.optional-dependencies]
+build = [
+    "pyinstaller>=6.10",
+]
+
 [project.scripts]
 blockdodge = "blockdodge.__main__:main"
 

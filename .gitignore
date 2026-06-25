@@ -367,3 +367,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /rank.txt
+
+# Python build outputs
+build/
+dist/
+*.spec
+*.egg-info/
