@@ -27,6 +27,7 @@ from .constants import (
     WINDOW_WIDTH,
 )
 from .effects import Buff, Debuff, Final, lose_efficacy
+from .ime import disable_ime_for_pygame_window
 from .rank import add_or_update_rank_item, read_rank_items
 from .state import GameState
 from .transmitter import Transmitter
@@ -56,6 +57,7 @@ class BlockDodgeApp:
 
         pygame.display.set_caption("德克萨斯送快递")
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.ime_disabled = disable_ime_for_pygame_window()
         self.clock = pygame.time.Clock()
         self.assets = Assets.load()
         self.state = GameState()
@@ -82,6 +84,8 @@ class BlockDodgeApp:
         self.input_accum = 0
         self.w_key_was_down = False
         self.s_key_was_down = False
+        self.w_key_is_down = False
+        self.s_key_is_down = False
         self.vertical_hold_direction = 0
 
         self.menu_font = make_font(30)
@@ -206,6 +210,8 @@ class BlockDodgeApp:
         self.input_accum = 0
         self.w_key_was_down = False
         self.s_key_was_down = False
+        self.w_key_is_down = False
+        self.s_key_is_down = False
         self.vertical_hold_direction = 0
         self.start_button.text = "开始游戏"
         self.start_button.enabled = True
@@ -248,10 +254,18 @@ class BlockDodgeApp:
                 continue
             if event.type == pygame.KEYDOWN:
                 self._handle_key(event)
-            elif event.type in (pygame.KEYUP, pygame.WINDOWFOCUSGAINED, pygame.WINDOWFOCUSLOST):
-                self.w_key_was_down = False
-                self.s_key_was_down = False
-                self.vertical_hold_direction = 0
+            elif event.type == pygame.WINDOWFOCUSGAINED:
+                self.ime_disabled = disable_ime_for_pygame_window()
+                self._reset_vertical_input()
+            elif event.type in (pygame.KEYUP, pygame.WINDOWFOCUSLOST):
+                if event.type == pygame.KEYUP:
+                    direction = self._vertical_key_direction(event)
+                    if direction < 0:
+                        self.w_key_is_down = False
+                    elif direction > 0:
+                        self.s_key_is_down = False
+                else:
+                    self._reset_vertical_input()
             if self.current_screen == Screen.MENU:
                 for button in self.menu_buttons:
                     if button.handle_event(event):
@@ -264,23 +278,21 @@ class BlockDodgeApp:
     def _handle_key(self, event: pygame.event.Event) -> None:
         if self.current_screen != Screen.GAME or self.state.pause:
             return
-        key_name = getattr(event, "unicode", "").lower()
-        key_label = pygame.key.name(event.key).lower()
-        scancode = getattr(event, "scancode", None)
-        if event.key in (pygame.K_w, pygame.K_UP) or key_name == "w" or key_label == "w" or scancode in (26, 82):
+        direction = self._vertical_key_direction(event)
+        if direction < 0:
+            self.w_key_is_down = True
             self._move_player_vertical(-1)
-        elif event.key in (pygame.K_s, pygame.K_DOWN) or key_name == "s" or key_label == "s" or scancode in (22, 81):
+        elif direction > 0:
+            self.s_key_is_down = True
             self._move_player_vertical(1)
 
     def _handle_pressed_keys(self) -> None:
         if self.current_screen != Screen.GAME or self.state.pause:
-            self.w_key_was_down = False
-            self.s_key_was_down = False
-            self.vertical_hold_direction = 0
+            self._reset_vertical_input()
             return
         pressed = pygame.key.get_pressed()
-        w_down = pressed[pygame.K_w] or pressed[pygame.K_UP]
-        s_down = pressed[pygame.K_s] or pressed[pygame.K_DOWN]
+        w_down = self.w_key_is_down or pressed[pygame.K_w] or pressed[pygame.K_UP]
+        s_down = self.s_key_is_down or pressed[pygame.K_s] or pressed[pygame.K_DOWN]
         if w_down and not self.w_key_was_down:
             self._move_player_vertical(-1)
         if s_down and not self.s_key_was_down:
@@ -293,6 +305,23 @@ class BlockDodgeApp:
             self.vertical_hold_direction = 0
         self.w_key_was_down = w_down
         self.s_key_was_down = s_down
+
+    def _vertical_key_direction(self, event: pygame.event.Event) -> int:
+        key_name = getattr(event, "unicode", "").lower()
+        key_label = pygame.key.name(event.key).lower()
+        scancode = getattr(event, "scancode", None)
+        if event.key in (pygame.K_w, pygame.K_UP) or key_name == "w" or key_label == "w" or scancode in (26, 82):
+            return -1
+        if event.key in (pygame.K_s, pygame.K_DOWN) or key_name == "s" or key_label == "s" or scancode in (22, 81):
+            return 1
+        return 0
+
+    def _reset_vertical_input(self) -> None:
+        self.w_key_was_down = False
+        self.s_key_was_down = False
+        self.w_key_is_down = False
+        self.s_key_is_down = False
+        self.vertical_hold_direction = 0
 
     def _move_player_vertical(self, direction: int, *, reset_input_timer: bool = True) -> None:
         if direction < 0:
