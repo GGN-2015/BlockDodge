@@ -27,11 +27,15 @@ from .constants import (
     WINDOW_WIDTH,
 )
 from .effects import Buff, Debuff, Final, lose_efficacy
-from .ime import disable_ime_for_pygame_window
+from .ime import prepare_keyboard_input_for_game_window
 from .rank import add_or_update_rank_item, read_rank_items
 from .state import GameState
 from .transmitter import Transmitter
 from .ui import Button, draw_status_label, draw_text, make_font
+
+
+MOVE_UP_SCANCODES = {26, 82}
+MOVE_DOWN_SCANCODES = {22, 81}
 
 
 class Screen(Enum):
@@ -57,7 +61,7 @@ class BlockDodgeApp:
 
         pygame.display.set_caption("德克萨斯送快递")
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        self.ime_disabled = disable_ime_for_pygame_window()
+        prepare_keyboard_input_for_game_window()
         self.clock = pygame.time.Clock()
         self.assets = Assets.load()
         self.state = GameState()
@@ -255,7 +259,7 @@ class BlockDodgeApp:
             if event.type == pygame.KEYDOWN:
                 self._handle_key(event)
             elif event.type == pygame.WINDOWFOCUSGAINED:
-                self.ime_disabled = disable_ime_for_pygame_window()
+                prepare_keyboard_input_for_game_window()
                 self._reset_vertical_input()
             elif event.type in (pygame.KEYUP, pygame.WINDOWFOCUSLOST):
                 if event.type == pygame.KEYUP:
@@ -310,9 +314,9 @@ class BlockDodgeApp:
         key_name = getattr(event, "unicode", "").lower()
         key_label = pygame.key.name(event.key).lower()
         scancode = getattr(event, "scancode", None)
-        if event.key in (pygame.K_w, pygame.K_UP) or key_name == "w" or key_label == "w" or scancode in (26, 82):
+        if event.key in (pygame.K_w, pygame.K_UP) or key_name == "w" or key_label == "w" or scancode in MOVE_UP_SCANCODES:
             return -1
-        if event.key in (pygame.K_s, pygame.K_DOWN) or key_name == "s" or key_label == "s" or scancode in (22, 81):
+        if event.key in (pygame.K_s, pygame.K_DOWN) or key_name == "s" or key_label == "s" or scancode in MOVE_DOWN_SCANCODES:
             return 1
         return 0
 
